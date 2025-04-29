@@ -43,11 +43,11 @@ class App {
         optionsSuccessStatus: 204,
       }),
     );
-    this.express.options("*", cors());
+    //this.express.options("*", cors());
 
     this.express.use(express.json());
     this.express.use(express.urlencoded({ extended: false }));
-    this.express.use("/api/v1");
+    //this.express.use("/api/v1");
 
     const limiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
