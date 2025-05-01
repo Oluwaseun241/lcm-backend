@@ -13,3 +13,68 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String?
+  phoneNumber   String    @unique
+  passcode      String
+  name          String
+  dob           DateTime?
+  isVerified    Boolean   @default(false)
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Wallet {
+  id            String  @id @default(uuid())
+  accountNumber String
+  accountName   String
+  balance       Decimal @default(0)
+}
+
+model Loan {
+  id           String      @id @default(uuid())
+  amount       Decimal
+  startDate    DateTime
+  endDate      DateTime
+  paymentMode  PaymentMode
+  guarantor1   Json
+  guarantor2   Json
+  personalInfo Json
+  status       LoanStatus  @default(pending)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+enum PaymentMode {
+  daily
+  weekly
+  monthly
+}
+
+enum LoanStatus {
+  pending
+  declined
+  approved
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  amount    Decimal
+  direction String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id String @id @default(uuid())
+}
+
+model Event {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
