@@ -9,7 +9,7 @@ import {
   verifyRefreshToken,
 } from "../../utils/token.utils";
 
-const auth = {
+const authController = {
   async registerUser(req: Request, res: Response) {
     try {
       const validation = UserSchema.safeParse(req.body);
@@ -31,7 +31,7 @@ const auth = {
     }
   },
 
-  async Login(req: Request, res: Response) {
+  async login(req: Request, res: Response) {
     try {
       const validation = LoginSchema.safeParse(req.body);
       if (!validation.success) {
@@ -92,4 +92,4 @@ const auth = {
     }
   },
 };
-export default auth;
+export default authController;

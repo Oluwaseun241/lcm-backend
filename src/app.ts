@@ -1,9 +1,10 @@
 import cors from "cors";
 import logger from "./log/logger";
 import rateLimit from "express-rate-limit";
-//import { connectToDatabase } from "./config/database";
+import { connectToDatabase } from "./config/database";
 import express, { Application, Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
+import authRouter from "./modules/auth/auth.route";
 dotenv.config();
 
 class App {
@@ -47,7 +48,7 @@ class App {
 
     this.express.use(express.json());
     this.express.use(express.urlencoded({ extended: false }));
-    //this.express.use("/api/v1");
+    this.express.use("/api/v1", authRouter);
 
     const limiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
@@ -118,7 +119,7 @@ class App {
 
     findAvailablePort(3000).then((PORT) => {
       this.express.listen(PORT, async () => {
-        //await connectToDatabase();
+        await connectToDatabase();
         console.log(`App is listening on Port ${PORT}`);
       });
     });
