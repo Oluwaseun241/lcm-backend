@@ -8,18 +8,22 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "../../utils/token.utils";
+import { comparePassword } from "../../utils/hash.utils";
 
 const authController = {
-  async registerUser(req: Request, res: Response) {
+  async registerUser(req: Request, res: Response): Promise<any> {
     try {
       const validation = UserSchema.safeParse(req.body);
       if (!validation.success) {
-        ApiError(400, `${validation.error.errors}`, res);
+        return ApiError(400, `${validation.error.errors}`, res);
       }
 
       const userData = validation.data;
+      if (!userData) {
+        return ApiError(400, "Invalid user data", res);
+      }
 
-      const user = authRepository.createUser(userData);
+      const user = await authRepository.createUser(userData);
 
       return res.status(201).send({
         success: true,
@@ -31,7 +35,7 @@ const authController = {
     }
   },
 
-  async login(req: Request, res: Response) {
+  async login(req: Request, res: Response): Promise<any> {
     try {
       const validation = LoginSchema.safeParse(req.body);
       if (!validation.success) {
@@ -41,7 +45,7 @@ const authController = {
       const { email, password } = validation.data;
 
       const user = await prisma.user.findUnique({ where: { email } });
-      if (!user || !(await hash.comparePassword(password, user.password))) {
+      if (!user || !(await comparePassword(password, user.password))) {
         return ApiError(401, "Invalid email or password", res);
       }
 
@@ -65,7 +69,7 @@ const authController = {
     }
   },
 
-  async refreshToken(req: Request, res: Response) {
+  async refreshToken(req: Request, res: Response): Promise<any>  {
     const { refreshToken } = req.body;
     if (!refreshToken) return ApiError(401, "Refresh token required", res);
 

@@ -5,6 +5,12 @@ import { connectToDatabase } from "./config/database";
 import express, { Application, Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import authRouter from "./modules/auth/auth.route";
+import loanRouter from "./modules/loan/loan.route";
+import walletRouter from "./modules/wallet/wallet.route";
+import transactionRoutes from "./modules/transaction/transaction.routes";
+//import userRouter from "./modules/user/user.route";
+//import adminRouter from "./modules/admin/admin.route";
+//import transactionRouter from "./modules/transaction/transaction.route";
 dotenv.config();
 
 class App {
@@ -48,7 +54,7 @@ class App {
 
     this.express.use(express.json());
     this.express.use(express.urlencoded({ extended: false }));
-    this.express.use("/api/v1", authRouter);
+    this.express.use("/api/v1", authRouter, loanRouter, walletRouter, transactionRoutes);
 
     const limiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes

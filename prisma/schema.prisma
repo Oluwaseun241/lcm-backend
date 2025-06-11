@@ -21,32 +21,68 @@ model User {
   phoneNumber   String    @unique
   passcode      String
   name          String
+  firstName     String?
+  lastName      String?
   dob           DateTime?
+  bvn           String?   @unique
+  isBvnVerified Boolean   @default(false)
   isVerified    Boolean   @default(false)
   emailVerified Boolean   @default(false)
+  isAdmin       Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  wallet        Wallet?
+  loans         Loan[]
 }
 
 model Wallet {
-  id            String  @id @default(uuid())
-  accountNumber String
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+  accountNumber String    @unique
   accountName   String
-  balance       Decimal @default(0)
+  balance       Float     @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  transactions  Transaction[]
+  bankAccounts  BankAccount[]
 }
 
 model Loan {
-  id           String      @id @default(uuid())
-  amount       Decimal
-  startDate    DateTime
-  endDate      DateTime
-  paymentMode  PaymentMode
-  guarantor1   Json
-  guarantor2   Json
-  personalInfo Json
-  status       LoanStatus  @default(pending)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  amount        Decimal
+  interestRate  Float       @default(0.0)
+  startDate     DateTime
+  endDate       DateTime
+  paymentMode   PaymentMode
+  guarantor1    Json
+  guarantor2    Json
+  personalInfo  Json
+  status        LoanStatus  @default(pending)
+  approvedBy    String?
+  approvedAt    DateTime?
+  rejectionReason String?
+  repaymentSchedule Json?
+  totalAmount   Decimal
+  remainingAmount Decimal
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  repayments    Repayment[]
+}
+
+model Repayment {
+  id            String    @id @default(uuid())
+  loanId        String
+  loan          Loan      @relation(fields: [loanId], references: [id])
+  amount        Decimal
+  paymentDate   DateTime  @default(now())
+  status        PaymentStatus @default(pending)
+  paymentMethod String
+  reference     String    @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 enum PaymentMode {
@@ -59,14 +95,29 @@ enum LoanStatus {
   pending
   declined
   approved
+  disbursed
+  completed
+  defaulted
+}
+
+enum PaymentStatus {
+  pending
+  successful
+  failed
 }
 
 model Transaction {
-  id        String   @id @default(uuid())
-  amount    Decimal
-  direction String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(uuid())
+  walletId      String
+  wallet        Wallet    @relation(fields: [walletId], references: [id])
+  type          TransactionType
+  amount        Float
+  reference     String    @unique
+  status        TransactionStatus @default(pending)
+  description   String?
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Notification {
@@ -77,4 +128,28 @@ model Event {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model BankAccount {
+  id            String    @id @default(uuid())
+  walletId      String
+  wallet        Wallet    @relation(fields: [walletId], references: [id])
+  bankName      String
+  accountNumber String
+  accountName   String
+  isDefault     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum TransactionType {
+  TOPUP
+  TRANSFER
+  WITHDRAWAL
+}
+
+enum TransactionStatus {
+  pending
+  successful
+  failed
 }
