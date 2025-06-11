@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../config/database";
 import ApiError from "../../errors/ApiErrorHandler";
 import { calculateRepaymentSchedule } from "../../utils/loan.utils";
+import { LoanApplicationSchema, RepaymentSchema, LoanApprovalSchema } from "../../services/validate.service";
 
 const loanController = {
   async applyForLoan(req: Request, res: Response): Promise<any> {
@@ -9,6 +10,11 @@ const loanController = {
       const userId = req.user?.id;
       if (!userId) {
         return ApiError(401, "User not authenticated", res);
+      }
+
+      const validation = LoanApplicationSchema.safeParse(req.body);
+      if (!validation.success) {
+        return ApiError(400, validation.error.errors.map(err => err.message).join(", "), res);
       }
 
       const {
@@ -19,7 +25,7 @@ const loanController = {
         personalInfo,
         startDate,
         endDate
-      } = req.body;
+      } = validation.data;
 
       // Calculate interest and total amount
       const interestRate = 0.005; // 0.5% interest rate
@@ -125,7 +131,13 @@ const loanController = {
       }
 
       const { loanId } = req.params;
-      const { amount, paymentMethod } = req.body;
+      
+      const validation = RepaymentSchema.safeParse(req.body);
+      if (!validation.success) {
+        return ApiError(400, validation.error.errors.map(err => err.message).join(", "), res);
+      }
+
+      const { amount, paymentMethod } = validation.data;
 
       const loan = await prisma.loan.findFirst({
         where: {
@@ -220,7 +232,13 @@ const loanController = {
   async approveLoan(req: Request, res: Response): Promise<any> {
     try {
       const { loanId } = req.params;
-      const { rejectionReason } = req.body;
+      
+      const validation = LoanApprovalSchema.safeParse(req.body);
+      if (!validation.success) {
+        return ApiError(400, validation.error.errors.map(err => err.message).join(", "), res);
+      }
+
+      const { rejectionReason } = validation.data;
 
       const loan = await prisma.loan.findUnique({
         where: { id: loanId }
@@ -257,7 +275,13 @@ const loanController = {
   async rejectLoan(req: Request, res: Response): Promise<any> {
     try {
       const { loanId } = req.params;
-      const { rejectionReason } = req.body;
+      
+      const validation = LoanApprovalSchema.safeParse(req.body);
+      if (!validation.success) {
+        return ApiError(400, validation.error.errors.map(err => err.message).join(", "), res);
+      }
+
+      const { rejectionReason } = validation.data;
 
       if (!rejectionReason) {
         return ApiError(400, "Rejection reason is required", res);

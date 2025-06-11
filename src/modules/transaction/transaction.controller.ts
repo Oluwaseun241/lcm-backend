@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { prisma } from "../../config/database";
 import ApiError from "../../errors/ApiErrorHandler";
-import { Prisma } from "@prisma/client";
+import { Prisma, TransactionType, TransactionStatus } from "@prisma/client";
+import { TransactionQuerySchema } from "../../services/validate.service";
 
 const transactionController = {
   async getTransactionHistory(req: Request, res: Response): Promise<any> {
@@ -9,6 +10,11 @@ const transactionController = {
       const userId = req.user?.id;
       if (!userId) {
         return ApiError(401, "User not authenticated", res);
+      }
+
+      const validation = TransactionQuerySchema.safeParse(req.query);
+      if (!validation.success) {
+        return ApiError(400, validation.error.errors.map(err => err.message).join(", "), res);
       }
 
       const { 
@@ -20,7 +26,7 @@ const transactionController = {
         limit = 10,
         sortBy = 'createdAt',
         sortOrder = 'desc'
-      } = req.query;
+      } = validation.data;
 
       const wallet = await prisma.wallet.findUnique({
         where: { userId }
@@ -34,22 +40,22 @@ const transactionController = {
         walletId: wallet.id,
         ...(startDate && endDate && {
           createdAt: {
-            gte: new Date(startDate as string),
-            lte: new Date(endDate as string)
+            gte: new Date(startDate),
+            lte: new Date(endDate)
           }
         }),
-        ...(type && { type: type as any }),
-        ...(status && { status: status as any })
+        ...(type && { type }),
+        ...(status && { status })
       };
 
       const [transactions, total] = await Promise.all([
         prisma.transaction.findMany({
           where,
           orderBy: {
-            [sortBy as string]: sortOrder
+            [sortBy]: sortOrder
           },
-          skip: (Number(page) - 1) * Number(limit),
-          take: Number(limit),
+          skip: (page - 1) * limit,
+          take: limit,
           include: {
             wallet: {
               select: {
@@ -85,9 +91,9 @@ const transactionController = {
           }), {}),
           pagination: {
             total,
-            page: Number(page),
-            limit: Number(limit),
-            pages: Math.ceil(total / Number(limit))
+            page,
+            limit,
+            pages: Math.ceil(total / limit)
           }
         }
       });

@@ -3,16 +3,18 @@ import { prisma } from "../../config/database";
 import ApiError from "../../errors/ApiErrorHandler";
 import { generateAccountNumber } from "../../utils/account.utils";
 import { generateReference } from "../../utils/transaction.utils";
-import { Prisma } from "@prisma/client";
+import { Prisma, TransactionType, TransactionStatus } from "@prisma/client";
+import { BVNVerificationSchema, BankAccountSchema, TransferSchema } from "../../services/validate.service";
 
 const walletController = {
   async verifyBVN(req: Request, res: Response): Promise<any> {
     try {
-      const { bvn } = req.body;
-
-      if (!bvn || bvn.length !== 11) {
-        return ApiError(400, "Invalid BVN format", res);
+      const validation = BVNVerificationSchema.safeParse(req.body);
+      if (!validation.success) {
+        return ApiError(400, validation.error.errors.map(err => err.message).join(", "), res);
       }
+
+      const { bvn } = validation.data;
 
       // TODO: Integrate with actual BVN verification service
       // This is a mock verification for now
@@ -23,7 +25,7 @@ const walletController = {
       }
 
       // Update user's BVN status
-      const userId = req.user?.id; // Assuming you have user info in request
+      const userId = req.user?.id;
       if (!userId) {
         return ApiError(401, "User not authenticated", res);
       }
@@ -195,24 +197,28 @@ const walletController = {
         return ApiError(401, "User not authenticated", res);
       }
 
-      const { recipientAccountNumber, amount, description } = req.body;
-      if (!amount || amount <= 0) {
-        return ApiError(400, "Invalid amount", res);
+      const validation = TransferSchema.safeParse(req.body);
+      if (!validation.success) {
+        return ApiError(400, validation.error.errors.map(err => err.message).join(", "), res);
       }
 
+      const { recipientAccountNumber, amount, description } = validation.data;
+
+      // Get sender's wallet
       const senderWallet = await prisma.wallet.findUnique({
         where: { userId }
       });
 
       if (!senderWallet) {
-        return ApiError(404, "Sender wallet not found", res);
+        return ApiError(404, "Wallet not found", res);
       }
 
-      if (senderWallet.balance < Number(amount)) {
-        return ApiError(400, "Insufficient balance", res);
+      if (senderWallet.balance < amount) {
+        return ApiError(400, "Insufficient funds", res);
       }
 
-      const recipientWallet = await prisma.wallet.findUnique({
+      // Get recipient's wallet
+      const recipientWallet = await prisma.wallet.findFirst({
         where: { accountNumber: recipientAccountNumber }
       });
 
@@ -220,36 +226,47 @@ const walletController = {
         return ApiError(404, "Recipient wallet not found", res);
       }
 
-      const transaction = await prisma.$transaction(async (prisma) => {
-        // Create transfer transaction
-        const transfer = await prisma.transaction.create({
-          data: {
-            walletId: senderWallet.id,
-            type: 'TRANSFER',
-            amount: Number(amount),
-            reference: generateReference('TRANSFER'),
-            status: 'successful',
-            description: description || `Transfer to ${recipientWallet.accountName}`,
-            metadata: {
-              recipientAccountNumber,
-              recipientName: recipientWallet.accountName
-            }
+      // Generate transaction reference
+      const reference = generateReference('TRANSFER');
+
+      // Create transaction record
+      const transaction = await prisma.transaction.create({
+        data: {
+          walletId: senderWallet.id,
+          type: TransactionType.TRANSFER,
+          amount,
+          description: description || 'Transfer to user',
+          reference,
+          status: TransactionStatus.pending
+        }
+      });
+
+      // Update sender's balance
+      await prisma.wallet.update({
+        where: { id: senderWallet.id },
+        data: {
+          balance: {
+            decrement: amount
           }
-        });
+        }
+      });
 
-        // Update sender's balance
-        await prisma.wallet.update({
-          where: { id: senderWallet.id },
-          data: { balance: senderWallet.balance - Number(amount) }
-        });
+      // Update recipient's balance
+      await prisma.wallet.update({
+        where: { id: recipientWallet.id },
+        data: {
+          balance: {
+            increment: amount
+          }
+        }
+      });
 
-        // Update recipient's balance
-        await prisma.wallet.update({
-          where: { id: recipientWallet.id },
-          data: { balance: recipientWallet.balance + Number(amount) }
-        });
-
-        return transfer;
+      // Update transaction status
+      await prisma.transaction.update({
+        where: { id: transaction.id },
+        data: {
+          status: TransactionStatus.successful
+        }
       });
 
       return res.status(200).json({
@@ -398,7 +415,12 @@ const walletController = {
         return ApiError(401, "User not authenticated", res);
       }
 
-      const { bankName, accountNumber, accountName, isDefault } = req.body;
+      const validation = BankAccountSchema.safeParse(req.body);
+      if (!validation.success) {
+        return ApiError(400, validation.error.errors.map(err => err.message).join(", "), res);
+      }
+
+      const { bankName, accountNumber, accountName, isDefault } = validation.data;
 
       const wallet = await prisma.wallet.findUnique({
         where: { userId }
