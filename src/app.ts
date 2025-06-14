@@ -25,10 +25,19 @@ class App {
   }
 
   private initializeMiddleware(): void {
+    // Health check endpoint
+    this.express.get("/api/v1/health", (req: Request, res: Response) => {
+      res.status(200).json({
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+      });
+    });
+
     // Uncomment and configure as needed
     // this.express.use(morgan("dev"));
     //this.express.use(helmet());
-    const allowedOrigins = ["http://localhost:5173", ""];
+    const allowedOrigins = ["*"];
     this.express.use(
       cors({
         origin: function (origin, callback) {
