@@ -61,7 +61,7 @@ const authController = {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
+          name: `${user.firstName} ${user.lastName}`,
         },
       });
     } catch (err) {

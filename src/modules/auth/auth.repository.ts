@@ -10,7 +10,7 @@ const repository = {
   async createUser(payload: createUser) {
     const hashed = payload.password
       ? await hashedPassword(payload.password)
-      : undefined;
+      : "";
 
     const newUser = await prisma.user.create({
       data: {

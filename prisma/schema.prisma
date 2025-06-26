@@ -18,9 +18,8 @@ model User {
   id            String    @id @default(uuid())
   email         String    @unique
   password      String
-  phoneNumber   String    @unique
-  passcode      String
-  name          String
+  phoneNumber   String?    @unique
+  passcode      String?
   firstName     String?
   lastName      String?
   dob           DateTime?
