@@ -1,4 +1,3 @@
-import "reflect-metadata";
 import * as dotenv from "dotenv";
 import logger from "../log/logger";
 import { PrismaClient } from "@prisma/client";
@@ -13,7 +12,6 @@ async function connectToDatabase() {
 
   while (retries < MAX_RETRIES) {
     try {
-      //await prisma.initialize();
       await prisma.$connect();
       logger.info("Database connected successfully");
       return;
