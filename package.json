@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "bun src/index.ts",
-    "start": "bun src/index.ts",
+    "dev": "npx src/index.ts",
+    "start": "npx src/index.ts",
     "build": "tsc"
   },
   "devDependencies": {
