@@ -4,6 +4,10 @@ import userController from "../user/user.controller";
 
 const authRouter: Router = Router();
 
+// check health
+authRouter.get("/", (req: Request, res: Response) => {
+  res.status(200).json({ status: true, message: "Server is running" });
+});
 
 authRouter.post("/auth/signup", authController.registerUser);
 
