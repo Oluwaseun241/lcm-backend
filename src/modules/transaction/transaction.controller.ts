@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../../config/database";
 import ApiError from "../../errors/ApiErrorHandler";
-import { Prisma, TransactionType, TransactionStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { TransactionQuerySchema } from "../../services/validate.service";
 
 const transactionController = {
