@@ -1,5 +1,5 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
@@ -7,36 +7,32 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN bun install
 
 # Copy source code
 COPY . .
 
-# Build TypeScript code
-# RUN npm run build
-#
-# # Production stage
-# FROM node:18-alpine
-#
-# WORKDIR /app
-#
-# # Copy package files
-# COPY package*.json ./
-#
-# # Install production dependencies only
-# RUN npm install
-#
-# # Copy built files from builder stage
-# COPY --from=builder /app/dist ./dist
-#
-# # Copy prisma schema and migrations
-# COPY prisma ./prisma
-#
 # Generate Prisma client
-RUN npx prisma generate
+RUN bunx prisma generate
+
+# Production stage
+FROM oven/bun:1-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies only
+RUN bun install --production
+
+# Copy source code from builder stage
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Expose port
 EXPOSE 3000
 
-# Start the application (optionally run migrations)
-CMD ["npm", "run", "dev"] 
+# Start the application
+CMD ["bun", "run", "dev"] 
