@@ -29,12 +29,14 @@ RUN npm install --only=production
 # Copy built files from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy prisma schema and generate client
+# Copy prisma schema and migrations
 COPY prisma ./prisma
+
+# Generate Prisma client
 RUN npx prisma generate
 
 # Expose port
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "start"] 
+# Start the application (optionally run migrations)
+CMD ["sh", "-c", "npx prisma migrate deploy && npm start"] 
