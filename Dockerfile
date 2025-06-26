@@ -39,4 +39,4 @@ RUN npx prisma generate
 EXPOSE 3000
 
 # Start the application (optionally run migrations)
-CMD ["npm", "run", "dev"] 
+CMD ["npm", "dev"] 
