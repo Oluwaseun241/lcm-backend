@@ -18,7 +18,12 @@ const repository = {
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
-    return user;
+    if (!user) {
+      throw new Error("User not found");
+    }
+    // remove password from response
+    const { password, passcode, ...safeUser } = user;
+    return safeUser;
   },
 };
 

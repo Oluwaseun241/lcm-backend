@@ -25,11 +25,12 @@ const userController = {
         message: "Bio updated successfully",
         data: user,
       });
-    } catch {
+    } catch (error) {
+      console.log("Failed to update bio", error);
       ApiError(500, "Failed to update bio", res);
     }
   },
-  
+
   async getUser(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.user?.id;
