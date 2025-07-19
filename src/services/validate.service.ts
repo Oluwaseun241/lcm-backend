@@ -40,14 +40,18 @@ export const LoanApplicationSchema = z.object({
     image: z.string().min(1),
     signature: z.string().min(1),
   }),
-  startDate: z.string().refine(
-    (val) => !isNaN(Date.parse(val)),
-    "Invalid start date format (expected ISO 8601)"
-  ),
-  endDate: z.string().refine(
-    (val) => !isNaN(Date.parse(val)),
-    "Invalid end date format (expected ISO 8601)"
-  ),
+  startDate: z
+    .string()
+    .refine(
+      (val) => !isNaN(Date.parse(val)),
+      "Invalid start date format (expected ISO 8601)",
+    ),
+  endDate: z
+    .string()
+    .refine(
+      (val) => !isNaN(Date.parse(val)),
+      "Invalid end date format (expected ISO 8601)",
+    ),
 });
 
 export const RepaymentSchema = z.object({
@@ -66,27 +70,37 @@ export const BVNVerificationSchema = z.object({
 
 export const BankAccountSchema = z.object({
   bankName: z.string().min(1, "Bank name is required"),
-  accountNumber: z.string().min(10, "Account number must be at least 10 digits"),
+  accountNumber: z
+    .string()
+    .min(10, "Account number must be at least 10 digits"),
   accountName: z.string().min(1, "Account name is required"),
   isDefault: z.boolean().optional(),
 });
 
 export const TransferSchema = z.object({
-  recipientAccountNumber: z.string().min(10, "Account number must be at least 10 digits"),
+  recipientAccountNumber: z
+    .string()
+    .min(10, "Account number must be at least 10 digits"),
   amount: z.number().positive("Amount must be positive"),
   description: z.string().optional(),
 });
 
 // Transaction validation schemas
 export const TransactionQuerySchema = z.object({
-  startDate: z.string().optional().refine(
-    (val) => !val || !isNaN(Date.parse(val)),
-    "Invalid start date format (expected ISO 8601)"
-  ),
-  endDate: z.string().optional().refine(
-    (val) => !val || !isNaN(Date.parse(val)),
-    "Invalid end date format (expected ISO 8601)"
-  ),
+  startDate: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || !isNaN(Date.parse(val)),
+      "Invalid start date format (expected ISO 8601)",
+    ),
+  endDate: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || !isNaN(Date.parse(val)),
+      "Invalid end date format (expected ISO 8601)",
+    ),
   type: z.nativeEnum(TransactionType).optional(),
   status: z.nativeEnum(TransactionStatus).optional(),
   page: z.string().optional().transform(Number),
