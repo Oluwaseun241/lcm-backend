@@ -28,9 +28,7 @@ const authController = {
         return ApiError(400, "Invalid user data", res);
       }
 
-      console.log("Calling authRepository.createUser...");
       const user = await authRepository.createUser(userData);
-      console.log("User created successfully:", user);
 
       const response = {
         success: true,
@@ -38,7 +36,6 @@ const authController = {
         data: user,
       };
       
-      console.log("Sending response:", response);
       return res.status(201).send(response);
     } catch (err: any) {
       console.error("Registration error:", err);

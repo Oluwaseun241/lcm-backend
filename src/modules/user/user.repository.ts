@@ -14,6 +14,12 @@ const repository = {
     const { password, passcode, ...safeUser } = updatedUser;
     return safeUser;
   },
+  async getUser(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    return user;
+  },
 };
 
 export default repository;

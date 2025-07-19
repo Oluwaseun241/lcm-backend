@@ -29,6 +29,26 @@ const userController = {
       ApiError(500, "Failed to update bio", res);
     }
   },
+  
+  async getUser(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        ApiError(401, "Unauthorized", res);
+        return;
+      }
+
+      const user = await userRepository.getUser(userId);
+
+      res.status(200).json({
+        success: true,
+        message: "User fetched successfully",
+        data: user,
+      });
+    } catch {
+      ApiError(500, "Failed to fetch user", res);
+    }
+  },
 };
 
 export default userController;
