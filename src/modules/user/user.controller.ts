@@ -8,7 +8,7 @@ const userController = {
     try {
       const validation = AddBioSchema.safeParse(req.body);
       if (!validation.success) {
-        ApiError(400, `${validation.error.format()}`, res);
+        ApiError(400, `Validation error: ${validation.error.errors.map(e => e.message).join(', ')}`, res);
         return;
       }
 
@@ -25,8 +25,20 @@ const userController = {
         message: "Bio updated successfully",
         data: user,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.log("Failed to update bio", error);
+      
+      // Handle Prisma validation errors
+      if (error.code === 'P2000') {
+        ApiError(400, "Invalid data format provided", res);
+        return;
+      }
+      
+      if (error.code === 'P2025') {
+        ApiError(404, "User not found", res);
+        return;
+      }
+      
       ApiError(500, "Failed to update bio", res);
     }
   },

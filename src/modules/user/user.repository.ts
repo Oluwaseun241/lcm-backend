@@ -7,7 +7,7 @@ const repository = {
       data: {
         firstName: data.firstName,
         lastName: data.lastName,
-        dob: data.dob,
+        dob: new Date(data.dob),
       },
     });
 

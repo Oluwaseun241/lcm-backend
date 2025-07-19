@@ -12,9 +12,13 @@ export const AddBioSchema = z.object({
   dob: z
     .string()
     .refine(
-      (val) => !isNaN(Date.parse(val)),
-      "Invalid date format (expected ISO 8601)",
-    ),
+      (val) => {
+        const date = new Date(val);
+        return !isNaN(date.getTime()) && date.toString() !== 'Invalid Date';
+      },
+      "Invalid date format. Please use YYYY-MM-DD format (e.g., 2000-07-19)"
+    )
+    .transform((val) => val), // Keep as string, will be converted to Date in repository
 });
 
 export const LoginSchema = z.object({
