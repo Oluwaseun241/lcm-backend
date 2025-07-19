@@ -13,25 +13,46 @@ import { comparePassword } from "../../utils/hash.utils";
 const authController = {
   async registerUser(req: Request, res: Response): Promise<any> {
     try {
+      console.log("Registration request body:", req.body);
+      
       const validation = UserSchema.safeParse(req.body);
       if (!validation.success) {
-        return ApiError(400, `${validation.error.errors}`, res);
+        console.log("Validation failed:", validation.error.errors);
+        return ApiError(400, `Validation error: ${validation.error.errors.map(e => e.message).join(', ')}`, res);
       }
 
       const userData = validation.data;
+      console.log("Validated user data:", userData);
+      
       if (!userData) {
         return ApiError(400, "Invalid user data", res);
       }
 
+      console.log("Calling authRepository.createUser...");
       const user = await authRepository.createUser(userData);
+      console.log("User created successfully:", user);
 
-      return res.status(201).send({
+      const response = {
         success: true,
         message: "User registered successfully",
         data: user,
-      });
-    } catch (err) {
-      return ApiError(500, "Something went wrong", res);
+      };
+      
+      console.log("Sending response:", response);
+      return res.status(201).send(response);
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      
+      // Handle specific errors
+      if (err.message === "User with this email already exists") {
+        return ApiError(409, "User with this email already exists", res);
+      }
+      
+      if (err.code === 'P2002') {
+        return ApiError(409, "User with this email already exists", res);
+      }
+      
+      return ApiError(500, "Something went wrong during registration", res);
     }
   },
 
