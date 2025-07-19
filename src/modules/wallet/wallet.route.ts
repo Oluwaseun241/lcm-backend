@@ -4,25 +4,24 @@ import { authenticateUser } from "../../middleware/auth.middleware";
 
 const walletRouter: Router = Router();
 
-walletRouter.use('/wallet', authenticateUser);
+// Apply authentication middleware to all wallet routes
+walletRouter.use(authenticateUser);
 
-walletRouter.post("/verify-bvn", walletController.verifyBVN);
+// Wallet routes
+walletRouter.post("/wallet/verify-bvn", walletController.verifyBVN);
 
-walletRouter.post("/create", walletController.createWallet);
+walletRouter.post("/wallet/create", walletController.createWallet);
 
-walletRouter.get("/details", walletController.getWalletDetails);
+walletRouter.get("/wallet/details", walletController.getWalletDetails);
 
-walletRouter.post("/top-up", walletController.topUpWallet);
+walletRouter.post("/wallet/top-up", walletController.topUpWallet);
 
-walletRouter.post("/transfer", walletController.transferToUser);
+walletRouter.post("/wallet/transfer", walletController.transferToUser);
 
-walletRouter.post("/withdraw", walletController.withdrawToBank);
+walletRouter.post("/wallet/withdraw", walletController.withdrawToBank);
 
-walletRouter.get("/statement", walletController.getStatement);
+walletRouter.get("/wallet/statement", walletController.getStatement);
 
-walletRouter.post("/add-bank", walletController.addBankAccount);
-
-
-
+walletRouter.post("/wallet/add-bank", walletController.addBankAccount);
 
 export default walletRouter; 
