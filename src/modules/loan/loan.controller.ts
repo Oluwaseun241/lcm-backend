@@ -135,7 +135,19 @@ const loanController = {
         success: true,
         data: {
           loans,
-          loanLimit
+          loanLimit,
+          limitFactors: {
+            walletBalance: wallet?.balance || 0,
+            totalLoans: loans.length,
+            approvedLoans: loans.filter(l => ['approved', 'disbursed'].includes(l.status)).length,
+            pendingLoans: loans.filter(l => l.status === 'pending').length,
+            completedLoans: loans.filter(l => l.status === 'completed').length,
+            defaultedLoans: loans.filter(l => l.status === 'defaulted').length,
+            totalLoanAmount: loans.reduce((sum, l) => sum + Number(l.amount), 0),
+            outstandingAmount: loans
+              .filter(l => ['approved', 'disbursed'].includes(l.status))
+              .reduce((sum, l) => sum + Number(l.remainingAmount), 0)
+          }
         }
       });
     } catch (err) {

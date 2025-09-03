@@ -69,25 +69,72 @@ export const calculateRepaymentSchedule = (
   return schedule;
 };
 
+/**
+ * Calculates the user's loan limit based on multiple factors:
+ * 
+ * 1. **Base Limit**: Minimum ₦100,000 for all users
+ * 2. **Wallet Balance**: 3x wallet balance (shows financial capacity)
+ * 3. **Loan Portfolio**: 1.2x total loan portfolio (shows creditworthiness)
+ * 4. **Credit History**: 
+ *    - +₦50,000 bonus per completed loan
+ *    - -20% penalty per defaulted loan
+ * 5. **Available Limit**: Base limit - outstanding loans
+ * 6. **Max Single Loan**: 60% of total limit or available limit (whichever is lower)
+ * 
+ * @param walletBalance - User's current wallet balance
+ * @param existingLoans - Array of user's existing loans with amounts and statuses
+ * @param monthlyIncome - Optional monthly income for more accurate calculation
+ * @returns LoanLimitInfo object with calculated limits
+ */
 export const calculateUserLoanLimit = (
   walletBalance: number,
   existingLoans: Array<{ amount: number; remainingAmount: number; status: string }>,
   monthlyIncome?: number
 ): LoanLimitInfo => {
-  // Base loan limit calculation
-  // Typically 3-5x monthly income or 50-80% of wallet balance
-  const baseLimit = monthlyIncome ? monthlyIncome * 3 : walletBalance * 0.8;
+  // Input validation
+  if (walletBalance < 0) walletBalance = 0;
+  if (!Array.isArray(existingLoans)) existingLoans = [];
   
-  // Calculate total outstanding loan amount
+  // Calculate total outstanding loan amount (only approved and disbursed loans)
   const outstandingLoans = existingLoans
     .filter(loan => ['approved', 'disbursed'].includes(loan.status))
-    .reduce((total, loan) => total + Number(loan.remainingAmount), 0);
+    .reduce((total, loan) => total + Number(loan.remainingAmount || 0), 0);
+  
+  // Calculate total loan portfolio (all loans including pending)
+  const totalLoanPortfolio = existingLoans.reduce((total, loan) => total + Number(loan.amount || 0), 0);
+  
+  // Calculate completed loans (for creditworthiness assessment)
+  const completedLoans = existingLoans.filter(loan => loan.status === 'completed').length;
+  const defaultedLoans = existingLoans.filter(loan => loan.status === 'defaulted').length;
+  
+  // Base loan limit calculation - more realistic approach
+  let baseLimit = 100000; // Minimum ₦100,000
+  
+  // Increase limit based on wallet balance
+  if (walletBalance > 0) {
+    baseLimit = Math.max(baseLimit, walletBalance * 3);
+  }
+  
+  // Increase limit based on loan portfolio (shows creditworthiness)
+  if (totalLoanPortfolio > 0) {
+    baseLimit = Math.max(baseLimit, totalLoanPortfolio * 1.2);
+  }
+  
+  // Bonus for good credit history (completed loans)
+  if (completedLoans > 0) {
+    baseLimit += completedLoans * 50000; // ₦50,000 bonus per completed loan
+  }
+  
+  // Penalty for bad credit history (defaulted loans)
+  if (defaultedLoans > 0) {
+    baseLimit = Math.max(100000, baseLimit * (1 - (defaultedLoans * 0.2))); // 20% reduction per default
+  }
   
   // Calculate available limit (base limit - outstanding loans)
   const availableLimit = Math.max(0, baseLimit - outstandingLoans);
   
-  // Maximum single loan amount (usually 30-50% of total limit)
-  const maxLoanAmount = Math.min(availableLimit, baseLimit * 0.5);
+  // Maximum single loan amount (usually 40-60% of total limit)
+  const maxLoanAmount = Math.min(availableLimit, baseLimit * 0.6);
   
   return {
     availableLimit: Math.round(availableLimit * 100) / 100, // Round to 2 decimal places
