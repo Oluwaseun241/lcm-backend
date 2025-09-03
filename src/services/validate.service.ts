@@ -109,6 +109,6 @@ export const TransactionQuerySchema = z.object({
   status: z.nativeEnum(TransactionStatus).optional(),
   page: z.string().optional().transform(Number),
   limit: z.string().optional().transform(Number),
-  sortBy: z.string().optional(),
-  sortOrder: z.enum(["asc", "desc"]).optional(),
+  sortBy: z.enum(['id', 'amount', 'type', 'status', 'createdAt', 'updatedAt']).optional().default('createdAt'),
+  sortOrder: z.enum(["asc", "desc"]).optional().default('desc'),
 });

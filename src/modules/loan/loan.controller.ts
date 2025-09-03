@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../../config/database";
 import ApiError from "../../errors/ApiErrorHandler";
-import { calculateRepaymentSchedule } from "../../utils/loan.utils";
+import { calculateRepaymentSchedule, calculateUserLoanLimit } from "../../utils/loan.utils";
 import { LoanApplicationSchema, RepaymentSchema, LoanApprovalSchema } from "../../services/validate.service";
 
 const loanController = {
@@ -104,6 +104,7 @@ const loanController = {
         return ApiError(401, "User not authenticated", res);
       }
 
+      // Get user's loans
       const loans = await prisma.loan.findMany({
         where: { userId },
         include: {
@@ -114,9 +115,28 @@ const loanController = {
         }
       });
 
+      // Get user's wallet balance
+      const wallet = await prisma.wallet.findUnique({
+        where: { userId },
+        select: { balance: true }
+      });
+
+      // Calculate loan limit
+      const loanLimit = calculateUserLoanLimit(
+        wallet?.balance || 0,
+        loans.map(loan => ({
+          amount: Number(loan.amount),
+          remainingAmount: Number(loan.remainingAmount),
+          status: loan.status
+        }))
+      );
+
       return res.status(200).json({
         success: true,
-        data: loans
+        data: {
+          loans,
+          loanLimit
+        }
       });
     } catch (err) {
       return ApiError(500, "Something went wrong", res);

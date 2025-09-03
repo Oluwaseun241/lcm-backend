@@ -7,6 +7,13 @@ interface RepaymentSchedule {
   interest: number;
 }
 
+interface LoanLimitInfo {
+  availableLimit: number;
+  totalLimit: number;
+  usedLimit: number;
+  maxLoanAmount: number;
+}
+
 export const calculateRepaymentSchedule = (
   principal: number,
   interestRate: number,
@@ -60,6 +67,34 @@ export const calculateRepaymentSchedule = (
   }
 
   return schedule;
+};
+
+export const calculateUserLoanLimit = (
+  walletBalance: number,
+  existingLoans: Array<{ amount: number; remainingAmount: number; status: string }>,
+  monthlyIncome?: number
+): LoanLimitInfo => {
+  // Base loan limit calculation
+  // Typically 3-5x monthly income or 50-80% of wallet balance
+  const baseLimit = monthlyIncome ? monthlyIncome * 3 : walletBalance * 0.8;
+  
+  // Calculate total outstanding loan amount
+  const outstandingLoans = existingLoans
+    .filter(loan => ['approved', 'disbursed'].includes(loan.status))
+    .reduce((total, loan) => total + Number(loan.remainingAmount), 0);
+  
+  // Calculate available limit (base limit - outstanding loans)
+  const availableLimit = Math.max(0, baseLimit - outstandingLoans);
+  
+  // Maximum single loan amount (usually 30-50% of total limit)
+  const maxLoanAmount = Math.min(availableLimit, baseLimit * 0.5);
+  
+  return {
+    availableLimit: Math.round(availableLimit * 100) / 100, // Round to 2 decimal places
+    totalLimit: Math.round(baseLimit * 100) / 100,
+    usedLimit: Math.round(outstandingLoans * 100) / 100,
+    maxLoanAmount: Math.round(maxLoanAmount * 100) / 100
+  };
 };
 
 const getDaysBetween = (start: Date, end: Date): number => {

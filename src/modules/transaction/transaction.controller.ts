@@ -28,6 +28,10 @@ const transactionController = {
         sortOrder = 'desc'
       } = validation.data;
 
+      // Validate sortBy field to prevent Prisma errors
+      const validSortFields = ['id', 'amount', 'type', 'status', 'createdAt', 'updatedAt'];
+      const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+
       const wallet = await prisma.wallet.findUnique({
         where: { userId }
       });
@@ -52,7 +56,7 @@ const transactionController = {
         prisma.transaction.findMany({
           where,
           orderBy: {
-            [sortBy]: sortOrder
+            [safeSortBy]: sortOrder
           },
           skip: (page - 1) * limit,
           take: limit,
@@ -98,6 +102,15 @@ const transactionController = {
         }
       });
     } catch (err) {
+      console.error('Transaction history error:', err);
+      
+      // Handle specific Prisma errors
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        console.error('Prisma error code:', err.code);
+        console.error('Prisma error message:', err.message);
+        return ApiError(400, "Invalid query parameters", res);
+      }
+      
       return ApiError(500, "Something went wrong", res);
     }
   },
