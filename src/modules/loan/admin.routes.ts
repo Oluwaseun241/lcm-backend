@@ -5,12 +5,12 @@ import { isAdmin } from "../../middleware/admin.middleware";
 const adminRouter: Router = Router();
 
 // Admin routes
-adminRouter.use('/adringa', isAdmin);
+adminRouter.use(isAdmin);
 
-adminRouter.get("/all", loanController.getAllLoans);
+adminRouter.get("/adringa/all", loanController.getAllLoans);
 
-adminRouter.post("/approve/:loanId", loanController.approveLoan);
+adminRouter.post("/adringa/approve/:loanId", loanController.approveLoan);
 
-adminRouter.post("/reject/:loanId", loanController.rejectLoan);
+adminRouter.post("/adringa/reject/:loanId", loanController.rejectLoan);
 
 export default adminRouter;
